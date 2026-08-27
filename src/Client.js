@@ -1168,7 +1168,7 @@ class Client extends EventEmitter {
                     const originalMapSet =
                         internalCallMap.set.bind(internalCallMap);
 
-                internalCallMap.set = function (key, value) {
+                    internalCallMap.set = function (key, value) {
                         emitCall(value);
                         return originalMapSet(key, value);
                     };
