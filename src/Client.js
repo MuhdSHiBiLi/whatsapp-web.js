@@ -504,6 +504,7 @@ class Client extends EventEmitter {
             const callArgs = [
                 '--autoplay-policy=no-user-gesture-required',
                 '--use-fake-ui-for-media-stream',
+                '--use-fake-device-for-media-stream',
             ];
             for (const arg of callArgs) {
                 const flag = arg.split('=')[0];
@@ -1170,14 +1171,12 @@ class Client extends EventEmitter {
                     });
                 };
 
-                if (!window._wwjsCallListener) {
-                    window._wwjsCallListener = true;
-                    WAWebCallCollection.on('change:activeCall', (call) => {
-                        if (call) {
-                            emitCall(call);
-                        }
-                    });
-                }
+                WAWebCallCollection.off('change:activeCall');
+                WAWebCallCollection.on('change:activeCall', (call) => {
+                    if (call) {
+                        emitCall(call);
+                    }
+                });
 
                 const mapKey = Object.keys(WAWebCallCollection).find(
                     (k) => WAWebCallCollection[k] instanceof Map,
