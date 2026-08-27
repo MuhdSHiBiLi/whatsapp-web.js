@@ -1328,7 +1328,19 @@ exports.LoadUtils = () => {
         return undefined;
     };
 
+    window.WWebJS.getCallStackInterface = async () => {
+        return window
+            .require('WAWebVoipStackInterface')
+            .getVoipStackInterface();
+    };
+
     window.WWebJS.rejectCall = async (peerJid, id) => {
+        const stack = await window.WWebJS.getCallStackInterface();
+        if (stack && typeof stack.rejectCall === 'function') {
+            await stack.rejectCall();
+            return;
+        }
+
         const _meUser = window
             .require('WAWebUserPrefsMeUser')
             .getMaybeMePnUser();

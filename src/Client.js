@@ -1131,26 +1131,48 @@ class Client extends EventEmitter {
                 WAWebCallCollection &&
                 typeof WAWebCallCollection.on === 'function'
             ) {
+                const emitCall = (call) => {
+                    if (
+                        !call ||
+                        !call.id ||
+                        window._wwjsLastCallId === call.id
+                    ) {
+                        return;
+                    }
+                    window._wwjsLastCallId = call.id;
+                    window.onIncomingCall({
+                        id: call.id,
+                        peerJid: call.peerJid,
+                        isVideo: call.isVideo,
+                        isGroup: call.isGroup,
+                        canHandleLocally: call.canHandleLocally,
+                        outgoing: call.outgoing,
+                        webClientShouldHandle: call.webClientShouldHandle,
+                        participants: call.participants,
+                    });
+                };
+                if (!window._wwjsCallListener) {
+                    window._wwjsCallListener = true;
+                    WAWebCallCollection.on('change:activeCall', (call) => {
+                        if (call) {
+                            emitCall(call);
+                        }
+                    });
+                }
+
                 const mapKey = Object.keys(WAWebCallCollection).find(
                     (k) => WAWebCallCollection[k] instanceof Map,
                 );
-                const internalCallMap = WAWebCallCollection[mapKey];
-                const originalMapSet =
-                    internalCallMap.set.bind(internalCallMap);
+                if (mapKey) {
+                    const internalCallMap = WAWebCallCollection[mapKey];
+                    const originalMapSet =
+                        internalCallMap.set.bind(internalCallMap);
 
                 internalCallMap.set = function (key, value) {
-                    window.onIncomingCall({
-                        id: value.id,
-                        peerJid: value.peerJid,
-                        isVideo: value.isVideo,
-                        isGroup: value.isGroup,
-                        canHandleLocally: value.canHandleLocally,
-                        outgoing: value.outgoing,
-                        webClientShouldHandle: value.webClientShouldHandle,
-                        participants: value.participants,
-                    });
-                    return originalMapSet(key, value);
-                };
+                        emitCall(value);
+                        return originalMapSet(key, value);
+                    };
+                }
             }
             Chat.on('remove', async (chat) => {
                 window.onRemoveChatEvent(
