@@ -499,6 +499,24 @@ class Client extends EventEmitter {
             // navigator.webdriver fix
             browserArgs.push('--disable-blink-features=AutomationControlled');
 
+            // Required for the calling feature: allow the audio graph to run
+            // without a user gesture and auto-grant the microphone permission.
+            const callArgs = [
+                '--autoplay-policy=no-user-gesture-required',
+                '--use-fake-ui-for-media-stream',
+            ];
+            for (const arg of callArgs) {
+                const flag = arg.split('=')[0];
+                if (!browserArgs.find((a) => a.startsWith(flag))) {
+                    browserArgs.push(arg);
+                }
+            }
+
+            const muteIndex = browserArgs.indexOf('--mute-audio');
+            if (muteIndex > -1) {
+                browserArgs.splice(muteIndex, 1);
+            }
+
             browser = await puppeteer.launch({
                 ...puppeteerOpts,
                 args: browserArgs,
@@ -1151,6 +1169,7 @@ class Client extends EventEmitter {
                         participants: call.participants,
                     });
                 };
+
                 if (!window._wwjsCallListener) {
                     window._wwjsCallListener = true;
                     WAWebCallCollection.on('change:activeCall', (call) => {
@@ -3305,6 +3324,49 @@ class Client extends EventEmitter {
             startTime,
             callType,
         );
+    }
+
+    /**
+     * Places an outgoing call to the provided chat or phone number
+     * @param {string} chatId The chat ID ("@c.us" is automatically appended) or phone number to call
+     * @param {object} [options] Call options
+     * @param {boolean} [options.video=false] Whether to place a video call instead of a voice call
+     * @param {boolean} [options.waitForAnswer=false] If true, waits until the callee answers (or the timeout elapses) before resolving
+     * @param {number} [options.answerTimeout=60000] Maximum time to wait for an answer, in milliseconds, when waitForAnswer is true
+     * @param {boolean} [options.injectAudio=true] Route the outgoing audio from injected clips (via Call.playAudio) instead of the real microphone. Set false to place a normal call
+     * @returns {Promise<Call>} The placed call
+     */
+    async call(chatId, options = {}) {
+        const callData = await this.pupPage.evaluate(
+            (id, isVideo, waitForAnswer, answerTimeout, injectAudio) => {
+                return window.WWebJS.startCall(
+                    id,
+                    isVideo,
+                    waitForAnswer,
+                    answerTimeout,
+                    injectAudio,
+                );
+            },
+            chatId,
+            options.video ?? false,
+            options.waitForAnswer ?? false,
+            options.answerTimeout ?? 60000,
+            options.injectAudio ?? true,
+        );
+
+        return new Call(this, callData);
+    }
+
+    /**
+     * Gets the call that is currently ongoing (ringing, being placed or connected), if any
+     * @returns {Promise<Call|null>} The current call, or null if there is no ongoing call
+     */
+    async getActiveCall() {
+        const callData = await this.pupPage.evaluate(() => {
+            return window.WWebJS.getActiveCall();
+        });
+
+        return callData ? new Call(this, callData) : null;
     }
 
     /**
