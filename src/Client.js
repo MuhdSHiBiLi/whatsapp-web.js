@@ -536,6 +536,20 @@ class Client extends EventEmitter {
         this.pupBrowser = browser;
         this.pupPage = page;
 
+        try {
+            await browser
+                .defaultBrowserContext()
+                .overridePermissions('https://web.whatsapp.com', [
+                    'microphone',
+                    'camera',
+                ]);
+        } catch (err) {
+            console.error(
+                '[DEBUG] Failed to override permissions:',
+                err.message,
+            );
+        }
+
         await this.authStrategy.afterBrowserInitialized();
         await this.initWebVersionCache();
 
