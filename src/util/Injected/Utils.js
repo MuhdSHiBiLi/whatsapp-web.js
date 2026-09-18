@@ -1487,10 +1487,16 @@ exports.LoadUtils = () => {
     window.WWebJS.getOngoingCall = () => {
         // lastActiveCall keeps pointing at the previous call even after it ends,
         // so a call in the ended state (0) is treated as no ongoing call.
-        const call = window.require('WAWebCallCollection').lastActiveCall;
+        const collection = window.require('WAWebCallCollection');
+        if (!collection) return null;
+        let call = collection.lastActiveCall;
+        if (!call) {
+            const models = collection.getModelsArray ? collection.getModelsArray() : (collection._models || collection.models || []);
+            call = models[models.length - 1] || null;
+        }
         if (
             !call ||
-            (typeof call.getState === 'function' && call.getState() === 0)
+            (call.webCallState === 'ENDED' || call.webCallState === 'FAILED' || call.webCallState === 'REJECTED')
         ) {
             return null;
         }
