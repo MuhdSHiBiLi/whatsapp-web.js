@@ -486,7 +486,7 @@ exports.LoadUtils = () => {
         // MediaData is a model whose private ID field collides with Msg's
         // private ID field when its enumerable properties are spread above.
         delete message.__x_id;
-        
+
         // Bot's won't reply if canonicalUrl is set (linking)
         if (botOptions) {
             delete message.canonicalUrl;
@@ -1491,12 +1491,16 @@ exports.LoadUtils = () => {
         if (!collection) return null;
         let call = collection.lastActiveCall;
         if (!call) {
-            const models = collection.getModelsArray ? collection.getModelsArray() : (collection._models || collection.models || []);
+            const models = collection.getModelsArray
+                ? collection.getModelsArray()
+                : collection._models || collection.models || [];
             call = models[models.length - 1] || null;
         }
         if (
             !call ||
-            (call.webCallState === 'ENDED' || call.webCallState === 'FAILED' || call.webCallState === 'REJECTED')
+            call.webCallState === 'ENDED' ||
+            call.webCallState === 'FAILED' ||
+            call.webCallState === 'REJECTED'
         ) {
             return null;
         }
