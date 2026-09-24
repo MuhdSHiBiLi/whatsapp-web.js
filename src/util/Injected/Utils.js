@@ -1537,7 +1537,6 @@ exports.LoadUtils = () => {
         // Calls not flagged as a user gesture are treated as deep links and
         // wait on a confirmation popup before the offer is sent.
         const { CALL_FROM_UI } = window.require('WAWebWamEnumCallFromUi');
-        const { CALL_FROM_UI } = window.require('WAWebWamEnumCallFromUi');
         const { LOBBY_ENTRY_POINT_TYPE } = window.require(
             'WAWebWamEnumLobbyEntryPointType',
         );
